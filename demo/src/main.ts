@@ -1,3 +1,5 @@
+// TODO: Soften the code so that it focuses solely on analyzing the observations defined in the ADR
+
 // MediaPipe for providing hand landmarks
 import { HandLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import type { Landmark } from "@mediapipe/tasks-vision";
