@@ -1,9 +1,9 @@
 # Selection of MediaPipe for Body Tracking Analysis
 
 - **Status:** accepted
-- **Workload:** 3h (so far)
+- **Workload:** 6h
 - **Decider:** [Paul Strebinger](https://github.com/visualsofpaul)
-- **Date:** 2026-05-05
+- **Date:** 2026-05-14
 
 ## Context and Problem Statement
 
@@ -13,11 +13,11 @@ The project requires a solution to extract live body tracking data (landmarks) d
 
 Chosen option: **MediaPipe (Hand Landmarker)**.
 
-The choice was made because MediaPipe provides direct access to 21 hand landmarkers (x, y, z coordinates) and a visibility score per point. This granularity is essential for the required analysis of raw data and noise.
+The choice was made because MediaPipe provides direct access to 21 hand landmarkers (x, y, z coordinates). This granularity is essential for the required analysis of raw data and noise.
 
 ## Planned Observations (Experimentation)
 
-To evaluate the model's quality and performance as requested, I Will focus on the following experiments:
+To evaluate the model's quality and performance as requested, I will focus on the following experiments:
 
 1. **Analysis of Data Noise (Jitter)**
 
@@ -34,17 +34,30 @@ To evaluate the model's quality and performance as requested, I Will focus on th
 - **Target:** Testing hand occlusion (one finger covering another) and distance variations.
 - **Observation:** When do the raw coordinates become unreliable or jump?
 
+## Confirmation and Results
+
+The planned experiments were conducted on a MacBook Air M1 (battery mode) to evaluate the decision. The following results were documented:
+
+- **Stable Performance:** Latency remains consistently between 9ms and 20ms, confirming the efficiency of the WASM/GPU execution.
+- **Environmental Impact:** Low-light conditions increase the noise floor (jitter) by a factor of ~2.5.
+- **Occlusion Behavior:** During hand occlusion, the model predicts "Phantom-Points" with significantly higher jitter (0.022), which must be handled in future gesture logic.
+
+For detailed metrics and test scenarios, see [OBSERVATIONS.md](../demo/OBSERVATIONS.md).
+
 ## Pros and Cons of MediaPipe
 
 ### Pros
 
 - Extremely fast processing via WebAssembly.
 - Provides raw z-axis estimation, allowing for depth analysis.
+- Robust tracking even under varying power-management states of the hardware.
 
 ### Cons
 
 - High dependency on specific WASM assets which requires careful initialization.
+- Occlusion leads to predicted coordinates ("Phantom-Points") instead of clear tracking loss.
 
 ## Links
 
 - [MediaPipe Hand Landmarker Documentation](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker)
+- [Observations](../demo/OBSERVATIONS.md)
