@@ -42,7 +42,7 @@ The planned experiments were conducted on a MacBook Air M1 (battery mode) to eva
 - **Environmental Impact:** Low-light conditions increase the noise floor (jitter) by a factor of ~2.5.
 - **Occlusion Behavior:** During hand occlusion, the model predicts "Phantom-Points" with significantly higher jitter (0.022), which must be handled in future gesture logic.
 
-For detailed metrics and test scenarios, see [OBSERVATIONS.md](../demo/OBSERVATIONS.md).
+For detailed metrics and test scenarios, see [OBSERVATIONS.md](../apps/01-poc-jitter/OBSERVATIONS.md).
 
 ## Pros and Cons of MediaPipe
 
@@ -60,4 +60,4 @@ For detailed metrics and test scenarios, see [OBSERVATIONS.md](../demo/OBSERVATI
 ## Links
 
 - [MediaPipe Hand Landmarker Documentation](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker)
-- [Observations](../demo/OBSERVATIONS.md)
+- [Observations](../apps/01-poc-jitter/OBSERVATIONS.md)

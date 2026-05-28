@@ -1,5 +1,5 @@
 {
-  "name": "demo",
+  "name": "01-poc-jitter",
   "module": "index.ts",
   "type": "module",
   "private": true,

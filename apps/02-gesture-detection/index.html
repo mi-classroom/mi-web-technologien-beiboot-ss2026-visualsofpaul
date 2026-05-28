@@ -1,0 +1,79 @@
+<!doctype html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediaPipe Measurement</title>
+</head>
+<html lang="en">
+  <body
+    style="
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding: 16px;
+      margin: 0;
+    "
+  >
+    <!-- Script that initializes the MediaPipe gesture recognition -->
+    <script type="module" src="/src/main.ts"></script>
+
+    <!-- Hidden video element for the webcam feed -->
+    <video id="webcam" autoplay playsinline style="display: none"></video>
+
+    <!-- Output canvas for displaying MediaPipe points -->
+    <canvas id="output" style="width: 100%"></canvas>
+
+    <!-- Landmark data table -->
+    <table>
+      <thead>
+        <tr>
+          <th>Landmark</th>
+          <th>X</th>
+          <th>Y</th>
+          <th>Z</th>
+          <th>Jitter</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>4 (Thumb)</td>
+          <td id="4-x"></td>
+          <td id="4-y"></td>
+          <td id="4-z"></td>
+          <td id="4-jitter"></td>
+        </tr>
+        <tr>
+          <td>8 (Index)</td>
+          <td id="8-x"></td>
+          <td id="8-y"></td>
+          <td id="8-z"></td>
+          <td id="8-jitter"></td>
+        </tr>
+        <tr>
+          <td>12 (Middle)</td>
+          <td id="12-x"></td>
+          <td id="12-y"></td>
+          <td id="12-z"></td>
+          <td id="12-jitter"></td>
+        </tr>
+        <tr>
+          <td>16 (Ring)</td>
+          <td id="16-x"></td>
+          <td id="16-y"></td>
+          <td id="16-z"></td>
+          <td id="16-jitter"></td>
+        </tr>
+        <tr>
+          <td>20 (Pinky)</td>
+          <td id="20-x"></td>
+          <td id="20-y"></td>
+          <td id="20-z"></td>
+          <td id="20-jitter"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Latency display -->
+    <p id="latency"></p>
+  </body>
+</html>
