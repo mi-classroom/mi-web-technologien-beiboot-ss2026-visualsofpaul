@@ -5,3 +5,4 @@ This directory contains Architectural Decision Records (ADRs) for the project. A
 ## These ADRs are included in this project
 
 - [ADR 0001: Selection of MediaPipe for Body Tracking Analysis](./adr-0001-selection-of-mediapipe-for-body-tracking-analysis.md)
+- [ADR 0002: Modular Hybrid Pipeline and Spatial Fencing Criteria](./adr-0002-modular-hybrid-pipeline.md)

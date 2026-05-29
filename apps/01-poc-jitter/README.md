@@ -25,4 +25,4 @@ Open your browser and wave your hands around. The app picks up the landmarks and
 
 This PoC includes a built-in measurement tool to analyze the raw data quality of MediaPipe. By pressing `Space`, the app captures 3D jitter and latency metrics.
 
-The findings regarding data noise, low-light performance, and edge cases (occlusion) are documented in [OBSERVATIONS.md](./OBSERVATIONS.md) and are also summarized in the ADR [Selection of MediaPipe for Body Tracking Analysis](../../docs/adr-0001-selection-of-mediapipe-for-body-tracking-analysis.md).
+The findings regarding data noise, low-light performance, and edge cases (occlusion) are documented in [OBSERVATIONS.md](./OBSERVATIONS.md) and are also summarized in [ADR 0001: Selection of MediaPipe for Body Tracking Analysis](../../docs/adr-0001-selection-of-mediapipe-for-body-tracking-analysis.md).
