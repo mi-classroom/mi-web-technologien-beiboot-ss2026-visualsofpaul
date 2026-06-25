@@ -1,0 +1,23 @@
+{
+	"name": "gestures",
+	"type": "module",
+	"private": true,
+	"exports": {
+		"./presets": "./dist/presets/index.js",
+		".": "./dist/index.js"
+	},
+	"scripts": {
+		"dev": "tsup --watch",
+		"build": "tsup"
+	},
+	"devDependencies": {
+		"@types/bun": "latest",
+		"tsup": "^8.5.1"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	},
+	"dependencies": {
+		"@mediapipe/tasks-vision": "^0.10.35"
+	}
+}

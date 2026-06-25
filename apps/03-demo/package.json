@@ -1,0 +1,19 @@
+{
+	"name": "03-demo",
+	"module": "index.ts",
+	"devDependencies": {
+		"@types/bun": "latest",
+		"vite": "^8.0.10"
+	},
+	"peerDependencies": {
+		"typescript": "^6.0.3"
+	},
+	"dependencies": {
+		"gestures": "workspace:*"
+	},
+	"private": true,
+	"scripts": {
+		"dev": "vite"
+	},
+	"type": "module"
+}
