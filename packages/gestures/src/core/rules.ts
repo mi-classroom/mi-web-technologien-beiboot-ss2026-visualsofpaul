@@ -22,35 +22,41 @@ export class FingerStateRule implements Rule {
 		private expectedState: State,
 	) {}
 
+	/**
+	 * Evaluates the state of the specified finger for the given hands.
+	 * @param hands An array of HandLandmarks representing the detected hands.
+	 * @returns An object containing whether the rule matches, the confidence level, and optionally the direction of the finger.
+	 */
 	evaluate(hands: HandLandmarks[]) {
 		const targetHands = hands.filter(
-			(h) =>
-				this.handMode === "any" || h.handedness.toLowerCase() === this.handMode,
+			(hand) =>
+				this.handMode === "any" ||
+				hand.handedness.toLowerCase() === this.handMode,
 		);
 
 		if (targetHands.length === 0) return { matches: false, confidence: 0 };
 
 		for (const hand of targetHands) {
-			// --- SONDERLOGIK FÜR DEN DAUMEN ---
+			// Special logic for the thumb, since it doesn't have the same joint structure as other fingers
 			if (this.finger === Finger.Thumb) {
 				const thumbTip = hand.points[4];
-				const indexMcp = hand.points[5]; // Basis des Zeigefingers
-				const pinkyMcp = hand.points[17]; // Basis des kleinen Fingers
+				const indexMcp = hand.points[5]; // Basis of the index finger
+				const pinkyMcp = hand.points[17]; // Basis of the little finger
 
 				if (!thumbTip || !indexMcp || !pinkyMcp) continue;
 
-				// Bestimme die Handbreite als Referenzwert gegen Skalierung (nah/fern an der Kamera)
+				// Calculate the hand size as the distance between the index MCP and pinky MCP
 				const handSize = Math.hypot(
 					indexMcp.x - pinkyMcp.x,
 					indexMcp.y - pinkyMcp.y,
 				);
-				// Abstand Daumenspitze zum Zeigefinger-Knöchel
+				// Calculate the distance between the thumb tip and the index MCP
 				const thumbDistance = Math.hypot(
 					thumbTip.x - indexMcp.x,
 					thumbTip.y - indexMcp.y,
 				);
 
-				// Wenn der Daumen weiter weg ist als ~60% der Handbreite, gilt er als abgespreizt (Extended)
+				// Determine if the thumb is extended based on its distance from the index MCP relative to the hand size
 				const isExtended = thumbDistance > handSize * 0.6;
 				const actualState = isExtended ? State.Extended : State.Curled;
 
@@ -63,7 +69,7 @@ export class FingerStateRule implements Rule {
 				return { matches: false, confidence: 0 };
 			}
 
-			// --- NORMALE LOGIK FÜR ALLE ANDEREN FINGER ---
+			// For other fingers, we can use the joint angles to determine if they are curled or extended
 			const joints = FINGER_JOINTS[this.finger as keyof typeof FINGER_JOINTS];
 			if (!joints) continue;
 
@@ -100,40 +106,46 @@ export class FingerDistanceRule implements Rule {
 		private handMode: "left" | "right" | "both" | "any",
 		private fingerA: Finger,
 		private fingerB: Finger,
-		private maxDistanceRatio: number, // Schwellenwert relativ zur Handgröße
+		private maxDistanceRatio: number, // Threshold value relative to the hand size
 	) {}
 
+	/**
+	 * Evaluates the distance between two specified fingers for the given hands.
+	 * @param hands An array of HandLandmarks representing the detected hands.
+	 * @returns An object containing whether the rule matches, the confidence level, and optionally the direction of the finger.
+	 */
 	evaluate(hands: HandLandmarks[]) {
 		const targetHands = hands.filter(
-			(h) =>
-				this.handMode === "any" || h.handedness.toLowerCase() === this.handMode,
+			(hand) =>
+				this.handMode === "any" ||
+				hand.handedness.toLowerCase() === this.handMode,
 		);
 
 		if (targetHands.length === 0) return { matches: false, confidence: 0 };
 		const hand = targetHands[0];
 
-		const tipA = hand.points[FINGER_TIP_INDEX[this.fingerA]];
-		const tipB = hand.points[FINGER_TIP_INDEX[this.fingerB]];
-		const indexMcp = hand.points[5];
-		const pinkyMcp = hand.points[17];
+		const tipA = hand?.points[FINGER_TIP_INDEX[this.fingerA]];
+		const tipB = hand?.points[FINGER_TIP_INDEX[this.fingerB]];
+		const indexMcp = hand?.points[5];
+		const pinkyMcp = hand?.points[17];
 
 		if (!tipA || !tipB || !indexMcp || !pinkyMcp)
 			return { matches: false, confidence: 0 };
 
-		// Handgröße als Referenz gegen Skalierung
+		// Calculate the hand size as the distance between the index MCP and pinky MCP
 		const handSize = Math.hypot(
 			indexMcp.x - pinkyMcp.x,
 			indexMcp.y - pinkyMcp.y,
 		);
-		// Realer Abstand zwischen den beiden Fingerspitzen
+		// Calculate the distance between the two finger tips
 		const distance = Math.hypot(tipA.x - tipB.x, tipA.y - tipB.y);
 
 		const distanceRatio = distance / handSize;
 
-		// Wenn der Abstand kleiner ist als der Schwellenwert (z.B. 0.25), berühren sie sich
+		// Check if the distance ratio is within the allowed maximum distance ratio
 		const matches = distanceRatio <= this.maxDistanceRatio;
 
-		// Höhere Confidence, je näher sie beieinander sind
+		// Calculate confidence based on how close the distance ratio is to the maximum allowed distance ratio
 		const confidence = matches
 			? Math.max(0, 1 - distanceRatio / this.maxDistanceRatio)
 			: 0;

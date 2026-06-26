@@ -19,7 +19,7 @@ export enum Direction {
 	Any = "Any",
 }
 
-export interface Point3D {
+interface Point3D {
 	x: number;
 	y: number;
 	z: number;

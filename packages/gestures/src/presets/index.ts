@@ -1,11 +1,10 @@
-// src/core/presets.ts
 import { Gesture, type GestureBuilder } from "@/core/builder";
 import { Finger, State } from "@/core/types";
 
 export const Presets = {
 	/**
-	 * ThumbsUp: Daumen gestreckt, alle anderen Finger geschlossen.
-	 * Ideal für vertikale Triggersignale.
+	 * @name ThumbsUp
+	 * Thumbs up gesture with thumb extended and all other fingers curled. Has a cooldown of 2 seconds to prevent accidental triggers.
 	 */
 	ThumbsUp: <Name extends string>(name: Name): GestureBuilder<Name> => {
 		return Gesture.create(name)
@@ -21,12 +20,12 @@ export const Presets = {
 			.has(Finger.Pinky)
 			.inState(State.Curled)
 			.where.determineDirectionFrom(Finger.Thumb)
-			.stableFor(300);
+			.waitFor(2000);
 	},
 
 	/**
-	 * Pointer: Nur der Zeigefinger ist gestreckt.
-	 * Perfekt für Richtungs-Swipes und Navigation.
+	 * @name Pointer
+	 * Index finger extended, all other fingers curled. Has a cooldown of 2 seconds to prevent accidental triggers.
 	 */
 	Pointer: <Name extends string>(name: Name): GestureBuilder<Name> => {
 		return Gesture.create(name)
@@ -42,43 +41,43 @@ export const Presets = {
 			.has(Finger.Pinky)
 			.inState(State.Curled)
 			.where.determineDirectionFrom(Finger.Index)
-			.stableFor(250);
+			.waitFor(2000);
 	},
 
 	/**
-	 * GunPose: Daumen und Zeigefinger gestreckt, der Rest als Faust.
-	 * Stark für Shooter-Mechaniken oder selektive Trigger.
+	 * @name Gun
+	 * Gun pose with thumb and index finger extended, rest curled. To trigger this gesture, the user must curl the index finger. Has a cooldown of 2 seconds to prevent accidental triggers and a confidence threshold of 0.75 to ensure accurate detection.
 	 */
-	GunPose: <Name extends string>(name: Name): GestureBuilder<Name> => {
+	Gun: <Name extends string>(name: Name): GestureBuilder<Name> => {
 		return Gesture.create(name)
 			.where.anyHand()
 			.has(Finger.Thumb)
 			.inState(State.Extended)
 			.thenTriggeredBy()
-			.curling([Finger.Index, Finger.Middle])
-			.stableFor(400)
+			.curling([Finger.Index])
+			.waitFor(2000)
 			.withConfidence(0.75);
 	},
 
 	/**
-	 * PinkyPinch: Anatomischer Loop aus Daumen- und kleiner Fingerspitze.
-	 * Diskreter Hintergrund- oder System-Trigger.
+	 * @name PinkyPinch
+	 * Pinch between thumb and pinky finger. Has a cooldown of 2 seconds to prevent accidental triggers.
 	 */
 	PinkyPinch: <Name extends string>(name: Name): GestureBuilder<Name> => {
 		return Gesture.create(name)
 			.where.anyHand()
 			.pinches(Finger.Thumb, Finger.Pinky)
-			.stableFor(2000);
+			.waitFor(2000);
 	},
 
 	/**
-	 * Fist: Alle 5 Finger sind komplett in die Handfläche gezogen.
-	 * Optimal als Hard-Stop oder Grab-Geste.
+	 * @name Fist
+	 * All fingers curled into a fist. Has a cooldown of 2 seconds to prevent accidental triggers.
 	 */
 	Fist: <Name extends string>(name: Name): GestureBuilder<Name> => {
 		return Gesture.create(name)
 			.where.anyHand()
 			.isClosedInto(State.Curled)
-			.stableFor(400); // Höherer Filter gegen kurzes flackern beim Schließen
+			.waitFor(2000);
 	},
 };

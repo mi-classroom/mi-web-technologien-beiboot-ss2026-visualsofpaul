@@ -1,80 +1,62 @@
 # Gesture Vocabulary & Library Philosophy
 
 > **Single Source of Truth & Reflection:**
-> This document represents the authoritative specification of the `@gestures` ecosystem. It synthesizes and refactors the experimental findings from `apps/02-gesture-detection` and the architectural baselines from `docs/adr-0002-modular-hybrid-pipeline.md`.
+> This document represents the authoritative specification of the `gestures` ecosystem. It synthesizes the production-ready implementation of the fluent API, the engine pipeline, and the optimized anatomical presets.
 >
 > **The Philosophy:**
-> **Anatomy over Interaction.** Based on real-world prototyping, this package **does not hardcode specific interaction meanings** (like "Next Slide" or "Volume Up"). Instead, it serves as an open, extensible framework. It provides a set of highly optimized **Anatomical Presets** and a fluent **Custom Builder Engine** allowing developers to assemble their own gesture logic like a sentence.
-
----
+> **Anatomy over Interaction.** This package **does not hardcode specific interaction meanings** (like "Next Slide" or "Volume Up"). Instead, it serves as an open, extensible framework. It provides a set of highly optimized **Anatomical Presets** and a fluent **Custom Builder Engine** allowing developers to assemble their own gesture logic like a sentence.
 
 ## 1. Core Anatomical Presets
 
-The library exports a foundational vocabulary under the `@gestures/presets` subpath. These presets focus purely on the structural state of the hand, exposing rich metadata (`hand: [Left|Right|Both]`, `direction: [Up|Down|Left|Right|Any]`) to the application layer.
+The library exports a foundational vocabulary under the `gestures/presets` subpath. These presets focus purely on the structural state of the hand, exposing rich metadata (`hand: "left" | "right" | "both" | "any"`, `direction: Direction`) to the application layer.
 
 | Preset Identifier | Anatomical Description & Core Trigger | Low-Level Constraints (The Fluent DSL Logic) |
 | :--- | :--- | :--- |
-| **`ThumbsUp`** | A crisp sign where the thumb is extended and all other fingers are tightly curled. <br><br>*Use Case: Ideal for vertical triggers (Up/Down).* | 1. `Thumb` = State: Extended.<br>2. `Index`, `Middle`, `Ring`, `Pinky` = State: Curled.<br>3. `.determineDirectionFrom(Finger.Thumb)` |
-| **`Pointer`** | Classic pointing pose with the index finger extended. <br><br>*Use Case: Directional swipes or navigation.* | 1. `Index` = State: Extended.<br>2. `Thumb`, `Middle`, `Ring`, `Pinky` = State: Curled.<br>3. `.determineDirectionFrom(Finger.Index)` |
-| **`GunPose`** | Thumb and Index extended, remaining fingers curled (resembling a pistol). <br><br>*Use Case: Dynamic trigger actions.* | 1. `Thumb` + `Index` = State: Extended.<br>2. `Middle`, `Ring`, `Pinky` = State: Curled. |
-| **`PinkyPinch`** | The tip of the thumb firmly touches the tip of the pinky, closing an anatomical loop. <br><br>*Use Case: Discrete background toggle / system command.* | 1. `Proximity([Thumb_Tip, Pinky_Tip])` $\le 2\text{cm}$.<br>2. Debounce window: $\ge 200\text{ms}$ to bridge occlusion noise. |
-| **`Fist`** | All five fingers are tightly curled into the palm. <br><br>*Use Case: Hard stop or grab modifiers.* | 1. All 5 fingers = State: Curled.<br>2. Rolling average filter to prevent occlusion jitter. |
+| **`Presets.ThumbsUp`** | A crisp sign where the thumb is extended and all other fingers are tightly curled. <br><br>*Use Case: Vertical triggers / approval signals.* | 1. `Thumb` = State: Extended.<br>2. `Index`, `Middle`, `Ring`, `Pinky` = State: Curled.<br>3. `.determineDirectionFrom(Finger.Thumb)` |
+| **`Presets.Pointer`** | Classic pointing pose with the index finger extended. <br><br>*Use Case: Directional swipes or navigation.* | 1. `Index` = State: Extended.<br>2. `Thumb`, `Middle`, `Ring`, `Pinky` = State: Curled.<br>3. `.determineDirectionFrom(Finger.Index)` |
+| **`Presets.Gun`** | Thumb and Index extended, remaining fingers curled (resembling a pistol). The gesture triggers when the index finger gets curled. <br><br>*Use Case: Dynamic trigger actions.* | 1. `Thumb` + `Index` = State: Extended.<br>2. `Middle`, `Ring`, `Pinky` = State: Curled. |
+| **`Presets.PinkyPinch`** | The tip of the thumb firmly touches the tip of the pinky, closing an anatomical loop. <br><br>*Use Case: Discrete background toggle / system command.* | 1. `pinches(Finger.Thumb, Finger.Pinky)` (Tip Proximity).<br>2. Built-in stabilization to bridge occlusion noise. |
+| **`Presets.Fist`** | All five fingers are tightly curled into the palm. <br><br>*Use Case: Hard stop or grab modifiers.* | 1. All 5 fingers = State: Curled via `.isClosedInto(State.Curled)`. |
 
-This presets can be loaded from `@gestures/presets` and used directly in the application code:
+These presets are instantiated with a custom runtime identifier string and can be registered directly into the engine pipeline:
 
 ```typescript
-import { GestureEngine, Direction } from "@gestures";
-import { ThumbsUp, Pointer, Fist, PinkyPinch } from "@gestures/presets";
+import { GestureEngine, Direction, Gesture, Finger, State } from "gestures";
+import { Presets } from "gestures/presets";
 
-const engine = new GestureEngine();
+const engine = new GestureEngine()
+  .register(Presets.ThumbsUp("ThumbsUp"))
+  .register(Presets.Pointer("Pointer"))
+  .register(Presets.Fist("Fist"))
+  // Mark as system gesture to keep it active even when the engine is paused
+  .register(Presets.PinkyPinch("PinkyPinch").asSystemGesture());
 
-// Register the raw, predefined anatomical presets
-engine.register(ThumbsUp);
-engine.register(Pointer);
-engine.register(Fist);
-engine.register(PinkyPinch);
-
-// Option A: Granular Lifecycle Control (Dedicated Start/Stop Gestures)
-engine.onGesture("ThumbsUp", (event) => {
-  if (event.hand === "both" && event.direction === Direction.Up) {
-    engine.startActiveState();
-    console.log("System Active");
-  }
+engine.bindWebcam({
+  videoElement: document.getElementById("webcam") as HTMLVideoElement,
 });
 
-engine.onGesture("Fist", (event) => {
-  if (event.hand === "any") {
-    engine.stopActiveState();
-    console.log("System Paused");
-  }
-});
-
-// Option B: Quick Lifecycle Toggle (Single Gesture Inverts Current State)
+// Option A: Quick Lifecycle Toggle (System gesture runs in background)
 engine.onGesture("PinkyPinch", (event) => {
-  if (event.hand === "right") {
-    engine.toggleActiveState();
-    console.log(engine.isActive ? "Resumed" : "Muted");
-  }
+  engine.toggleActiveState();
+  console.log(engine.isActive ? "Resumed tracking" : "Muted tracking");
 });
 
-// Context-aware execution: Only processes events when active state is true
+// Option B: Context-aware execution (Only processes events when active state is true)
 engine.onGesture("Pointer", (event) => {
-  if (!engine.isActive) return;
-  
   if (event.direction === Direction.Right) {
-    Reveal.next();
+    console.log("Swipe Right 👉");
   } else if (event.direction === Direction.Left) {
-    Reveal.prev();
+    console.log("Swipe Left 👈");
   }
 });
 
-// Execute functions on the active state
+engine.onGesture("ThumbsUp", (event) => {
+  console.log("Thumbs Up Detected 👍", event);
+});
+
+// Execute functions on active state changes
 engine.onActiveState((event) => {
-  if(event.activeState) {
-    console.log("System is now active. Listening for gestures...");
-  } else {
-    console.log("System is now inactive. Ignoring gestures...");
-  }
+  console.log("Gesture detection active state changed:", event.activeState);
 });
 ```
 
@@ -82,53 +64,47 @@ engine.onActiveState((event) => {
 
 If the presets are not sufficient, the core strength of the library is its **Fluent API**. New gestures can be registered completely inline within the application code without ever changing the library core.
 
-### Example 1: Building a Custom "Trigger" Action
-A developer can combine static presets with dynamic inflection triggers via logical connectors (`and()`, `or()`, `thenTriggeredBy()`):
+### Example 1: Building a Custom "Peak" Action
+A developer can combine static base poses with dynamic inflection triggers via `.thenTriggeredBy().curling()`. The state machine tracks the transition from the uncurled base pose to the curled state:
 
 ```typescript
-import { Gesture, Finger, State } from "@gestures";
+import { Gesture, Finger, State } from "gestures";
 
 const customClick = Gesture.create("CustomClick")
   .where.anyHand()
-    .has(Finger.Index).inState(State.Extended)
-    .and()
-    .has(Finger.Middle).inState(State.Extended)
+  .has(Finger.Thumb).inState(State.Extended)
   .thenTriggeredBy()
-    .curling([Finger.Index, Finger.Middle]) // Detects the rapid contraction
-  .withConfidence(0.90);
+  .curling([Finger.Index, Finger.Middle]) // Triggers on rapid contraction
+  .stableFor(400) // Require stable hold of the trigger
+  .withConfidence(0.75);
 ```
 
-### Example 2: Complex Multi-Hand Coordination via Logical Gates
-For sophisticated spatial commands, the API supports combining distinct conditions for the left and right hand using logical combinations. This allows building semantic macros directly at the application layer:
+### Example 2: Hold-to-Trigger Gestures (No Dynamic Trigger)
+If a gesture does not have a dynamic "click" action but instead requires the user to intentionally hold a specific anatomical pose for a period of time, use `.waitFor(ms)` to prevent accidental triggers:
 
 ```typescript
-import { Gesture, Finger, State, Direction } from "@gestures";
+import { Gesture, Finger, State } from "gestures";
+
+const offensiveManeuver = Gesture.create("MiddleFinger")
+  .where.anyHand()
+  .has(Finger.Middle).inState(State.Extended)
+  .has(Finger.Thumb).inState(State.Curled)
+  .has(Finger.Index).inState(State.Curled)
+  .has(Finger.Ring).inState(State.Curled)
+  .has(Finger.Pinky).inState(State.Curled)
+  .where.determineDirectionFrom(Finger.Middle)
+  .waitFor(2000); // Must be intentionally held for 2 seconds to fire
+```
+
+### Example 3: Complex Multi-Hand Coordination
+For sophisticated spatial commands, the API supports combining distinct conditions for the left and right hand using chains. This allows building semantic macros directly at the application layer:
+
+```typescript
+import { Gesture, Finger, State, Direction } from "gestures";
 
 const systemReset = Gesture.create("SystemReset")
-  .requireBothHands()
-  .where.leftHand()
-    .has(Finger.Thumb).inState(State.Extended)
-    .and()
-    .isPointing(Direction.Up)
-  .where.rightHand()
-    .isClosedInto(State.Curled) // Full fist shorthand
-  .and() // Wait for synchronous hold duration
-    .stableFor(500) 
-  .withConfidence(0.95);
-```
-
-### Example 3: Defining Alternatives using Disjunctions
-If an interaction should be triggered by multiple independent anatomical variations, developers can leverage the .either().or() syntax to keep event routing clean and single-channeled:
-
-```typescript
-import { Gesture, Direction } from "@gestures";
-import { Pointer, GunPose } from "@gestures/presets";
-
-const universalForward = Gesture.create("UniversalForward")
-  .either(
-    Gesture.fromPreset(Pointer).withDirection(Direction.Right)
-  )
-  .or(
-    Gesture.fromPreset(GunPose).withDirection(Direction.Right)
-  );
+  .requireBothHands() // Enforces multi-hand checking
+  .has(Finger.Thumb).inState(State.Extended)
+  .isPointing(Direction.Up)
+  .stableFor(500);
 ```
