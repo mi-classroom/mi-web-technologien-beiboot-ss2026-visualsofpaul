@@ -1,11 +1,6 @@
 {
-	"name": "02-gesture-detection",
+	"name": "03-demo",
 	"module": "index.ts",
-	"type": "module",
-	"private": true,
-	"scripts": {
-		"dev": "vite"
-	},
 	"devDependencies": {
 		"@types/bun": "latest",
 		"vite": "^8.0.10"
@@ -14,6 +9,11 @@
 		"typescript": "^6.0.3"
 	},
 	"dependencies": {
-		"@mediapipe/tasks-vision": "^0.10.35"
-	}
+		"gestures": "workspace:*"
+	},
+	"private": true,
+	"scripts": {
+		"dev": "vite"
+	},
+	"type": "module"
 }

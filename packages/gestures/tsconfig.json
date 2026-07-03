@@ -5,7 +5,9 @@
 		"target": "ESNext",
 		"module": "Preserve",
 		"moduleDetection": "force",
+		"jsx": "react-jsx",
 		"allowJs": true,
+		"types": ["bun"],
 
 		// Bundler mode
 		"moduleResolution": "bundler",
@@ -23,6 +25,14 @@
 		// Some stricter flags (disabled by default)
 		"noUnusedLocals": false,
 		"noUnusedParameters": false,
-		"noPropertyAccessFromIndexSignature": false
+		"noPropertyAccessFromIndexSignature": false,
+
+		// Aliases
+		"paths": {
+			"@/*": ["./src/*"],
+			"~/*": ["./*"]
+		},
+
+		"ignoreDeprecations": "6.0"
 	}
 }

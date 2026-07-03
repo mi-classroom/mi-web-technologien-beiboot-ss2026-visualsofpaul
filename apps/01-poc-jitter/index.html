@@ -18,7 +18,8 @@
     <script type="module" src="/src/main.ts"></script>
 
     <!-- Hidden video element for the webcam feed -->
-    <video id="webcam" autoplay playsinline style="display: none"></video>
+    <!-- biome-ignore lint/a11y/useMediaCaption: this is only for demonstration purposes -->
+        <video id="webcam" autoplay playsinline style="display: none"></video>
 
     <!-- Output canvas for displaying MediaPipe points -->
     <canvas id="output" style="width: 100%"></canvas>

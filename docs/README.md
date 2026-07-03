@@ -6,3 +6,8 @@ This directory contains Architectural Decision Records (ADRs) for the project. A
 
 - [ADR 0001: Selection of MediaPipe for Body Tracking Analysis](./adr-0001-selection-of-mediapipe-for-body-tracking-analysis.md)
 - [ADR 0002: Modular Hybrid Pipeline and Spatial Fencing Criteria](./adr-0002-modular-hybrid-pipeline.md)
+- [ADR 0003: Monorepo Structure for Development and Package Isolation](./adr-0003-monorepo-structure-for-development-and-package-isolation.md)
+- [ADR 0004: Fluent API and Builder Pattern for Type-Safe Gesture Definitions](./adr-0004-fluent-api-and-builder-pattern-for-type-safe-gesture-definitions.md)
+- [ADR 0005: Architectural Separation of Core Engine and Anatomical Presets](./adr-0005-architectural-separation-of-core-engine-and-anatomical-presets.md)
+- [ADR 0006: Lifecycle State Separation via System Gesture Flags (The Logic Gap)](./adr-0006-lifecycle-state-separation-via-system-gesture-flags-the-logic-gap.md)
+- [ADR 0007: Hybrid State Machine for Harmonized Static and Dynamic Gestures](./adr-0007-hybrid-state-machine-for-harmonized-static-and-dynamic-gestures.md)
