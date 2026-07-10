@@ -23,6 +23,10 @@ export class GestureEngine<RegisteredGestures extends string = never> {
 	private lastTriggeredTimestamps = new Map<string, number>();
 	private gestureStates = new Map<string, "waiting" | "ready">();
 
+	private firstDetectedTimestamps = new Map<string, number>();
+
+	private lastIdleTimestamps = new Map<string, number>();
+
 	private videoElement: HTMLVideoElement | null = null;
 	private handsDetector:
 		| import("@mediapipe/tasks-vision").HandLandmarker
@@ -275,13 +279,42 @@ export class GestureEngine<RegisteredGestures extends string = never> {
 			const now = Date.now();
 			const lastTriggered = this.lastTriggeredTimestamps.get(name) || 0;
 
-			// Step 3: Determine if the gesture should be emitted based on the current state, base pose match, trigger finger state, and cooldown period
+			// Step 3: Determine if the gesture should be emitted based on the current state, base pose match, trigger finger state, and timing settings
+			const holdFor = gestureBuilder.holdDurationMs ?? 0;
+			const idleFor = gestureBuilder.cooldownMs ?? 0;
+
+			// Manage timestamps for when the base pose was first seen or last lost
+			let basePoseHeldLongEnough = false;
+			if (basePoseMatches && directionMatches) {
+				if (!this.firstDetectedTimestamps.has(name)) {
+					this.firstDetectedTimestamps.set(name, now);
+				}
+				this.lastIdleTimestamps.delete(name);
+				const startedAt = this.firstDetectedTimestamps.get(name) || now;
+				basePoseHeldLongEnough = now - startedAt >= holdFor;
+			} else {
+				// Base pose not matching: mark idle start if not already set
+				if (this.firstDetectedTimestamps.has(name)) {
+					this.firstDetectedTimestamps.delete(name);
+				}
+				if (!this.lastIdleTimestamps.has(name)) {
+					this.lastIdleTimestamps.set(name, now);
+				}
+				const idleStartedAt = this.lastIdleTimestamps.get(name) || now;
+				const idleElapsed = now - idleStartedAt;
+				// If idle period is shorter than configured, keep previous state (debounce)
+				if (idleFor > 0 && idleElapsed < idleFor) {
+					// Do not forcefully set to waiting yet; skip to next gesture
+					continue;
+				}
+				// If idleFor satisfied (or zero), clear idle timestamp so next detection restarts timing
+				this.lastIdleTimestamps.delete(name);
+			}
 
 			// Option 1: Static pose without trigger fingers
 			if (gestureBuilder.triggerFingers.length === 0) {
-				if (basePoseMatches && directionMatches) {
+				if (basePoseMatches && directionMatches && basePoseHeldLongEnough) {
 					if (now - lastTriggered >= gestureBuilder.cooldownMs) {
-						// Emit the gesture event with full confidence (1.0) since there are no trigger fingers to evaluate
 						this.emitGesture(
 							name,
 							1.0,
@@ -289,12 +322,24 @@ export class GestureEngine<RegisteredGestures extends string = never> {
 							currentHandDirection,
 						);
 						this.lastTriggeredTimestamps.set(name, now);
+						// Require a fresh hold interval before the next static trigger
+						this.firstDetectedTimestamps.set(name, now);
 					}
 				}
+				if (!basePoseMatches || !directionMatches) {
+					this.gestureStates.set(name, "waiting");
+				}
 			}
+
 			// Option 2: Dynamic gesture with trigger fingers
 			else {
-				if (basePoseMatches && !triggerFingersAreCurled && directionMatches) {
+				// Dynamic gesture flow (requires trigger fingers)
+				if (
+					basePoseMatches &&
+					!triggerFingersAreCurled &&
+					directionMatches &&
+					basePoseHeldLongEnough
+				) {
 					this.gestureStates.set(name, "ready");
 				} else if (
 					currentState === "ready" &&
@@ -313,6 +358,8 @@ export class GestureEngine<RegisteredGestures extends string = never> {
 								currentHandDirection,
 							);
 							this.lastTriggeredTimestamps.set(name, now);
+							// Require a fresh hold interval before the next dynamic trigger cycle
+							this.firstDetectedTimestamps.set(name, now);
 						}
 					}
 					this.gestureStates.set(name, "waiting");

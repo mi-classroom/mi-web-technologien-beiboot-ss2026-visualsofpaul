@@ -9,6 +9,7 @@ export class GestureBuilder<Name extends string> {
 	public dominantFinger: Finger = Finger.Index;
 	public targetConfidence: number = 0.8;
 	public cooldownMs: number = 400;
+	public holdDurationMs: number = 0;
 	public isSystemTrigger: boolean = false;
 
 	constructor(public readonly name: Name) {}
@@ -22,46 +23,116 @@ export class GestureBuilder<Name extends string> {
 
 	/**
 	 * This method allows you to specify that the gesture can be performed with any hand.
-	 * @returns A HandBuilder instance that allows you to define the gesture for any hand.
+	 * @returns The current instance of GestureBuilder, allowing for method chaining.
 	 */
-	public anyHand() {
+	public anyHand(): GestureBuilder<Name> {
 		this.targetHandMode = "any";
-		return new HandBuilder(this);
+		return this;
 	}
 
 	/**
 	 * This method allows you to specify that the gesture can be performed with the left hand.
-	 * @returns A HandBuilder instance that allows you to define the gesture for the left hand.
+	 * @returns The current instance of GestureBuilder, allowing for method chaining.
 	 */
-	public leftHand() {
+	public leftHand(): GestureBuilder<Name> {
 		this.targetHandMode = "left";
-		return new HandBuilder(this);
+		return this;
 	}
 
 	/**
 	 * This method allows you to specify that the gesture can be performed with the right hand.
-	 * @returns A HandBuilder instance that allows you to define the gesture for the right hand.
+	 * @returns The current instance of GestureBuilder, allowing for method chaining.
 	 */
-	public rightHand() {
+	public rightHand(): GestureBuilder<Name> {
 		this.targetHandMode = "right";
-		return new HandBuilder(this);
+		return this;
 	}
 
 	/**
 	 * This method allows you to specify that the gesture requires both hands to be performed.
-	 * @returns A HandBuilder instance that allows you to define the gesture for both hands.
+	 * @returns The current instance of GestureBuilder, allowing for method chaining.
 	 */
-	public requireBothHands() {
+	public requireBothHands(): GestureBuilder<Name> {
 		this.targetHandMode = "both";
-		return new HandBuilder(this);
+		return this;
+	}
+
+	/**
+	 * This method allows you to specify that a particular finger should be in a specific state for the gesture to be recognized.
+	 * @param finger The finger that should be in a specific state for the gesture to be recognized, as a value from the Finger enum.
+	 * @returns An object with an inState method that allows you to specify the expected state for the finger.
+	 */
+	public has(finger: Finger): {
+		inState: (state: State) => GestureBuilder<Name>;
+	} {
+		return {
+			inState: (state: State) => {
+				this.basePoseRules.push(
+					new FingerStateRule(this.targetHandMode, finger, state),
+				);
+				return this;
+			},
+		};
+	}
+
+	/**
+	 * This method allows you to specify that all fingers should be in a specific state for the gesture to be recognized.
+	 * @param state The expected state for all fingers, as a value from the State enum.
+	 * @returns The current instance of GestureBuilder, allowing for method chaining.
+	 */
+	public isClosedInto(state: State): GestureBuilder<Name> {
+		const allFingers = [
+			Finger.Thumb,
+			Finger.Index,
+			Finger.Middle,
+			Finger.Ring,
+			Finger.Pinky,
+		];
+		for (const finger of allFingers) {
+			this.basePoseRules.push(
+				new FingerStateRule(this.targetHandMode, finger, state),
+			);
+		}
+		return this;
+	}
+
+	/**
+	 * This method allows you to specify that two fingers should be pinching for the gesture to be recognized.
+	 * @param fingerA The first finger that should be pinching for the gesture to be recognized.
+	 * @param fingerB The second finger that should be pinching for the gesture to be recognized.
+	 * @returns The current instance of GestureBuilder, allowing for method chaining.
+	 */
+	public pinches(fingerA: Finger, fingerB: Finger): GestureBuilder<Name> {
+		this.basePoseRules.push(
+			new FingerDistanceRule(this.targetHandMode, fingerA, fingerB, 0.25),
+		);
+		return this;
+	}
+
+	/**
+	 * A connector to make the API more readable.
+	 * @returns The current instance of GestureBuilder, allowing for method chaining.
+	 */
+	public and(): GestureBuilder<Name> {
+		return this;
 	}
 
 	/**
 	 * This method allows you to specify the trigger for the gesture.
 	 * @returns A TriggerBuilder instance that allows you to define the trigger for the gesture.
 	 */
-	public thenTriggeredBy() {
-		return new TriggerBuilder(this);
+	public thenTriggeredBy(): GestureBuilder<Name> {
+		return this;
+	}
+
+	/**
+	 * This method allows you to specify which fingers should be curled for the gesture to be recognized.
+	 * @param fingers The fingers that should be curled for the gesture to be recognized.
+	 * @returns The current instance of GestureBuilder, allowing for method chaining.
+	 */
+	public curling(fingers: Finger[]): GestureBuilder<Name> {
+		this.triggerFingers = fingers;
+		return this;
 	}
 
 	/**
@@ -85,11 +156,21 @@ export class GestureBuilder<Name extends string> {
 	}
 
 	/**
+	 * This method allows you to specify the duration for which the gesture must be held before it is recognized.
+	 * @param ms The duration in milliseconds for which the gesture must be held before it is recognized.
+	 * @returns The current instance of GestureBuilder, allowing for method chaining.
+	 */
+	public holdFor(ms: number): this {
+		this.holdDurationMs = ms;
+		return this;
+	}
+
+	/**
 	 * This method allows you to specify the cooldown period for the gesture, which is the time that must pass before the gesture can be recognized again.
 	 * @param ms The cooldown period in milliseconds.
 	 * @returns The current instance of GestureBuilder, allowing for method chaining.
 	 */
-	public waitFor(ms: number): this {
+	public idleFor(ms: number): this {
 		this.cooldownMs = ms;
 		return this;
 	}
@@ -122,13 +203,15 @@ export class HandBuilder<Name extends string> {
 	 * @param finger The finger that should be in a specific state for the gesture to be recognized, as a value from the Finger enum.
 	 * @returns An object with an inState method that allows you to specify the expected state for the finger.
 	 */
-	public has(finger: Finger): { inState: (state: State) => HandBuilder<Name> } {
+	public has(finger: Finger): {
+		inState: (state: State) => GestureBuilder<Name>;
+	} {
 		return {
 			inState: (state: State) => {
 				this.builder.basePoseRules.push(
 					new FingerStateRule(this.builder.targetHandMode, finger, state),
 				);
-				return this;
+				return this.builder;
 			},
 		};
 	}
@@ -138,9 +221,9 @@ export class HandBuilder<Name extends string> {
 	 * @param direction The expected direction for the gesture, as a value from the Direction enum.
 	 * @returns The current instance of HandBuilder, allowing for method chaining.
 	 */
-	public isPointing(direction: Direction): this {
+	public isPointing(direction: Direction): GestureBuilder<Name> {
 		this.builder.expectedDirection = direction;
-		return this;
+		return this.builder;
 	}
 
 	/**
@@ -148,7 +231,7 @@ export class HandBuilder<Name extends string> {
 	 * @param state The expected state for all fingers, as a value from the State enum.
 	 * @returns The current instance of HandBuilder, allowing for method chaining.
 	 */
-	public isClosedInto(state: State): this {
+	public isClosedInto(state: State): GestureBuilder<Name> {
 		const allFingers = [
 			Finger.Thumb,
 			Finger.Index,
@@ -161,7 +244,7 @@ export class HandBuilder<Name extends string> {
 				new FingerStateRule(this.builder.targetHandMode, finger, state),
 			);
 		}
-		return this;
+		return this.builder;
 	}
 
 	/**
@@ -170,7 +253,7 @@ export class HandBuilder<Name extends string> {
 	 * @param fingerB The second finger that should be pinching for the gesture to be recognized, as a value from the Finger enum.
 	 * @returns The current instance of HandBuilder, allowing for method chaining.
 	 */
-	public pinches(fingerA: Finger, fingerB: Finger): this {
+	public pinches(fingerA: Finger, fingerB: Finger): GestureBuilder<Name> {
 		this.builder.basePoseRules.push(
 			new FingerDistanceRule(
 				this.builder.targetHandMode,
@@ -179,23 +262,32 @@ export class HandBuilder<Name extends string> {
 				0.25,
 			),
 		);
-		return this;
+		return this.builder;
 	}
 
 	/**
 	 * This method is a connector to make the API more readable. It doesn't do anything, but it allows you to write near natural language when defining gestures.
 	 * @returns The current instance of HandBuilder, allowing for method chaining.
 	 */
-	public and() {
-		return this;
+	public and(): GestureBuilder<Name> {
+		return this.builder;
 	}
 
 	/**
 	 * This method allows you to specify the trigger for the gesture.
 	 * @returns A TriggerBuilder instance that allows you to define the trigger for the gesture.
 	 */
-	public thenTriggeredBy(): TriggerBuilder<Name> {
-		return new TriggerBuilder(this.builder);
+	public thenTriggeredBy(): GestureBuilder<Name> {
+		return this.builder;
+	}
+
+	/**
+	 * This method allows you to specify the duration for which the gesture must be held before it is recognized.
+	 * @param ms The duration in milliseconds for which the gesture must be held before it is recognized.
+	 * @returns The current instance of GestureBuilder, allowing for method chaining.
+	 */
+	public holdFor(ms: number): GestureBuilder<Name> {
+		return this.builder.holdFor(ms);
 	}
 
 	/**
@@ -203,8 +295,8 @@ export class HandBuilder<Name extends string> {
 	 * @param ms The cooldown period in milliseconds.
 	 * @returns The current instance of GestureBuilder, allowing for method chaining.
 	 */
-	public waitFor(ms: number): GestureBuilder<Name> {
-		return this.builder.waitFor(ms);
+	public idleFor(ms: number): GestureBuilder<Name> {
+		return this.builder.idleFor(ms);
 	}
 
 	/**
@@ -222,6 +314,15 @@ export class HandBuilder<Name extends string> {
 	get where() {
 		return this.builder;
 	}
+
+	/**
+	 * This method allows you to specify the confidence level required for the gesture to be recognized.
+	 * @param value The confidence level required for the gesture to be recognized, as a number between 0 and 1.
+	 * @returns The current instance of GestureBuilder, allowing for method chaining.
+	 */
+	public withConfidence(value: number): GestureBuilder<Name> {
+		return this.builder.withConfidence(value);
+	}
 }
 
 export class TriggerBuilder<Name extends string> {
@@ -232,9 +333,9 @@ export class TriggerBuilder<Name extends string> {
 	 * @param fingers The fingers that should be curled for the gesture to be recognized, as an array of values from the Finger enum.
 	 * @returns The current instance of TriggerBuilder, allowing for method chaining.
 	 */
-	public curling(fingers: Finger[]): this {
+	public curling(fingers: Finger[]): GestureBuilder<Name> {
 		this.builder.triggerFingers = fingers;
-		return this;
+		return this.builder;
 	}
 
 	/**
@@ -242,8 +343,38 @@ export class TriggerBuilder<Name extends string> {
 	 * @param ms The cooldown period in milliseconds.
 	 * @returns The current instance of GestureBuilder, allowing for method chaining.
 	 */
-	public waitFor(ms: number): GestureBuilder<Name> {
+	public idleFor(ms: number): GestureBuilder<Name> {
 		this.builder.cooldownMs = ms;
+		return this.builder;
+	}
+
+	/**
+	 * This method allows you to specify the duration for which the gesture must be held before it is recognized.
+	 * @param ms The duration in milliseconds for which the gesture must be held before it is recognized.
+	 * @returns The current instance of GestureBuilder, allowing for method chaining.
+	 */
+	public holdFor(ms: number): GestureBuilder<Name> {
+		this.builder.holdDurationMs = ms;
+		return this.builder;
+	}
+
+	/**
+	 * This method allows you to specify the confidence level required for the gesture to be recognized.
+	 * @param value The confidence level required for the gesture to be recognized, as a number between 0 and 1.
+	 * @returns The current instance of GestureBuilder, allowing for method chaining.
+	 */
+	public withConfidence(value: number): GestureBuilder<Name> {
+		this.builder.targetConfidence = value;
+		return this.builder;
+	}
+
+	/**
+	 * This method allows you to specify the expected direction for the gesture.
+	 * @param direction The expected direction for the gesture, as a value from the Direction enum.
+	 * @returns The current instance of GestureBuilder, allowing for method chaining.
+	 */
+	public isPointing(direction: Direction): GestureBuilder<Name> {
+		this.builder.expectedDirection = direction;
 		return this.builder;
 	}
 }

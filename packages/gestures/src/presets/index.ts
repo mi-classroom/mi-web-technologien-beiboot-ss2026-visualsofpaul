@@ -4,7 +4,7 @@ import { Finger, State } from "@/core/types";
 export const Presets = {
 	/**
 	 * @name ThumbsUp
-	 * Thumbs up gesture with thumb extended and all other fingers curled. Has a cooldown of 2 seconds to prevent accidental triggers.
+	 * Thumbs up gesture with thumb extended and all other fingers curled.
 	 */
 	ThumbsUp: <Name extends string>(name: Name): GestureBuilder<Name> => {
 		return Gesture.create(name)
@@ -19,13 +19,12 @@ export const Presets = {
 			.inState(State.Curled)
 			.has(Finger.Pinky)
 			.inState(State.Curled)
-			.where.determineDirectionFrom(Finger.Thumb)
-			.waitFor(2000);
+			.where.determineDirectionFrom(Finger.Thumb);
 	},
 
 	/**
 	 * @name Pointer
-	 * Index finger extended, all other fingers curled. Has a cooldown of 2 seconds to prevent accidental triggers.
+	 * Index finger extended, all other fingers curled.
 	 */
 	Pointer: <Name extends string>(name: Name): GestureBuilder<Name> => {
 		return Gesture.create(name)
@@ -40,13 +39,12 @@ export const Presets = {
 			.inState(State.Curled)
 			.has(Finger.Pinky)
 			.inState(State.Curled)
-			.where.determineDirectionFrom(Finger.Index)
-			.waitFor(2000);
+			.where.determineDirectionFrom(Finger.Index);
 	},
 
 	/**
 	 * @name Gun
-	 * Gun pose with thumb and index finger extended, rest curled. To trigger this gesture, the user must curl the index finger. Has a cooldown of 2 seconds to prevent accidental triggers and a confidence threshold of 0.75 to ensure accurate detection.
+	 * Gun pose with thumb and index finger extended, rest curled. To trigger this gesture, the user must curl the index finger.
 	 */
 	Gun: <Name extends string>(name: Name): GestureBuilder<Name> => {
 		return Gesture.create(name)
@@ -55,29 +53,24 @@ export const Presets = {
 			.inState(State.Extended)
 			.thenTriggeredBy()
 			.curling([Finger.Index])
-			.waitFor(2000)
 			.withConfidence(0.75);
 	},
 
 	/**
 	 * @name PinkyPinch
-	 * Pinch between thumb and pinky finger. Has a cooldown of 2 seconds to prevent accidental triggers.
+	 * Pinch between thumb and pinky finger.
 	 */
 	PinkyPinch: <Name extends string>(name: Name): GestureBuilder<Name> => {
 		return Gesture.create(name)
 			.where.anyHand()
-			.pinches(Finger.Thumb, Finger.Pinky)
-			.waitFor(2000);
+			.pinches(Finger.Thumb, Finger.Pinky);
 	},
 
 	/**
 	 * @name Fist
-	 * All fingers curled into a fist. Has a cooldown of 2 seconds to prevent accidental triggers.
+	 * All fingers curled into a fist.
 	 */
 	Fist: <Name extends string>(name: Name): GestureBuilder<Name> => {
-		return Gesture.create(name)
-			.where.anyHand()
-			.isClosedInto(State.Curled)
-			.waitFor(2000);
+		return Gesture.create(name).where.anyHand().isClosedInto(State.Curled);
 	},
 };

@@ -8,11 +8,11 @@ import {
 import { Presets } from "gestures/presets";
 
 const engine = new GestureEngine()
-	.register(Presets.ThumbsUp("ThumbsUp"))
-	.register(Presets.Pointer("Pointer"))
+	.register(Presets.ThumbsUp("ThumbsUp").holdFor(2000))
+	.register(Presets.Pointer("Pointer").holdFor(2000))
 	.register(Presets.Gun("Gun"))
-	.register(Presets.PinkyPinch("PinkyPinch").asSystemGesture())
-	.register(Presets.Fist("Fist"))
+	.register(Presets.PinkyPinch("PinkyPinch").idleFor(2000).asSystemGesture())
+	.register(Presets.Fist("Fist").holdFor(2000))
 	.register(
 		Gesture.create("MiddleFinger")
 			.where.anyHand()
@@ -26,8 +26,7 @@ const engine = new GestureEngine()
 			.inState(State.Curled)
 			.has(Finger.Pinky)
 			.inState(State.Curled)
-			.where.determineDirectionFrom(Finger.Middle)
-			.waitFor(2000),
+			.where.determineDirectionFrom(Finger.Middle),
 	);
 
 engine.bindWebcam({
