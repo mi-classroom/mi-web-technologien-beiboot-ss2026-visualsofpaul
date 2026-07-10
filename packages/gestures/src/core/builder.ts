@@ -8,7 +8,7 @@ export class GestureBuilder<Name extends string> {
 	public expectedDirection: Direction = Direction.Any;
 	public dominantFinger: Finger = Finger.Index;
 	public targetConfidence: number = 0.8;
-	public cooldownMs: number = 400;
+	public cooldownMs: number = 0;
 	public holdDurationMs: number = 0;
 	public isSystemTrigger: boolean = false;
 

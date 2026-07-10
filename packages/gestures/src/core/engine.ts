@@ -24,7 +24,6 @@ export class GestureEngine<RegisteredGestures extends string = never> {
 	private gestureStates = new Map<string, "waiting" | "ready">();
 
 	private firstDetectedTimestamps = new Map<string, number>();
-
 	private lastIdleTimestamps = new Map<string, number>();
 
 	private videoElement: HTMLVideoElement | null = null;
