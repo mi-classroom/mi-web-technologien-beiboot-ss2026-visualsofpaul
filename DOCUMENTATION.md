@@ -39,11 +39,11 @@ Create an engine, register gestures, bind a webcam, and listen for events:
 
 ```ts
 const engine = new GestureEngine()
-  .register(Presets.ThumbsUp("ThumbsUp"))
+  .register(Presets.ThumbsUp("ThumbsUp").holdFor(500).idleFor(1000))
   .register(Presets.Pointer("Pointer"))
   .register(Presets.Gun("Gun"))
   .register(Presets.PinkyPinch("PinkyPinch").asSystemGesture())
-  .register(Presets.Fist("Fist"))
+  .register(Presets.Fist("Fist").idleFor(1000))
   .register(
     Gesture.create("MiddleFinger")
       .where.anyHand()
@@ -57,8 +57,7 @@ const engine = new GestureEngine()
       .inState(State.Curled)
       .has(Finger.Pinky)
       .inState(State.Curled)
-      .where.determineDirectionFrom(Finger.Middle)
-      .waitFor(2000),
+      .where.determineDirectionFrom(Finger.Middle),
   );
 
 engine.bindWebcam({
@@ -142,7 +141,6 @@ Gesture.create("Gun")
   .inState(State.Extended)
   .thenTriggeredBy()
   .curling([Finger.Index])
-  .waitFor(2000)
   .withConfidence(0.75);
 ```
 
@@ -150,8 +148,9 @@ Use this pattern when you want a gesture to feel like an action, not just a stil
 
 ### Cooldowns and system gestures
 
-- `.waitFor(ms)` adds a cooldown so the same gesture does not fire repeatedly
-- `.asSystemGesture()` marks a gesture as available even when the engine is not in its normal active state
+- `.holdFor(ms)` requires the gesture to be held stably for a certain duration before it fires. Perfect for preventing accidental triggers during transition movements.
+- `.idleFor(ms)` enforces a cooldown window after the gesture fires. The engine will ignore this specific gesture for the given time, preventing rapid accidental double-triggering.
+- `.asSystemGesture()` marks a gesture as globally available. It will still fire even if the engine has been set to an inactive state.
 
 ## Presets
 

@@ -11,3 +11,5 @@ This directory contains Architectural Decision Records (ADRs) for the project. A
 - [ADR 0005: Architectural Separation of Core Engine and Anatomical Presets](./adr-0005-architectural-separation-of-core-engine-and-anatomical-presets.md)
 - [ADR 0006: Lifecycle State Separation via System Gesture Flags (The Logic Gap)](./adr-0006-lifecycle-state-separation-via-system-gesture-flags-the-logic-gap.md)
 - [ADR 0007: Hybrid State Machine for Harmonized Static and Dynamic Gestures](./adr-0007-hybrid-state-machine-for-harmonized-static-and-dynamic-gestures.md)
+- [ADR 0008: Transition from waitFor to Explicit holdFor and idleFor Semantics](./adr-0008-transition-from-waitfor-to-explicit-holdfor-and-idlefor-semantics.md)
+- [ADR 0009: Unifying the Fluent Builder Return Type to Eliminate State Traps](./adr-0009-unifiying-the-fluent-builder-return-type-to-eliminate-state-traps.md)
